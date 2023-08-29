@@ -1,5 +1,6 @@
 ## model is modified based on Alpaca train.py
 import os
+import logging
 import argparse
 import torch
 import transformers
@@ -17,6 +18,20 @@ DEFAULT_PAD_TOKEN = "[PAD]"
 DEFAULT_EOS_TOKEN = "</s>"
 DEFAULT_BOS_TOKEN = "</s>"
 DEFAULT_UNK_TOKEN = "</s>"
+
+PROMPT_DICT = {
+    "prompt_input": (
+        "Below is an instruction that describes a task, paired with an input that provides further context. "
+        "Write a response that appropriately completes the request.\n\n"
+        "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:"
+    ),
+    "prompt_no_input": (
+        "Below is an instruction that describes a task. "
+        "Write a response that appropriately completes the request.\n\n"
+        "### Instruction:\n{instruction}\n\n### Response:"
+    ),
+}
+
 def smart_tokenizer_and_embedding_resize(
     special_tokens_dict: Dict,
     tokenizer: transformers.PreTrainedTokenizer,
@@ -81,8 +96,16 @@ class SupervisedDataset(Dataset):
         super(SupervisedDataset, self).__init__()
 
         dataset_for_eval = load_dataset(data_path)['train']
-        sources = [item['prompt'] for item in dataset_for_eval]
-        targets = [item['chosen'] for item in dataset_for_eval]
+        logging.warning("Formatting inputs...")
+        prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
+        sources = [
+            prompt_input.format_map(example) if example.get("input", "") != "" else prompt_no_input.format_map(example)
+            for example in dataset_for_eval
+        ]
+        targets = [f"{example['output']}{tokenizer.eos_token}" for example in dataset_for_eval]
+
+        logging.warning("Tokenizing inputs... This may take some time...")
+        
         data_dict = preprocess(sources, targets, tokenizer)
 
         self.input_ids = data_dict["input_ids"] + data_dict["input_ids"][-50:]
@@ -170,20 +193,11 @@ def main(rank, args):
 
     tokenizer = LlamaTokenizer.from_pretrained(base_model)
 
-    if tokenizer.pad_token is None:
-        smart_tokenizer_and_embedding_resize(
-            special_tokens_dict=dict(pad_token=DEFAULT_PAD_TOKEN),
-            tokenizer=tokenizer,
-            model=model,
-        )
-    if "llama" in base_model:
-        tokenizer.add_special_tokens(
-            {
-                "eos_token": DEFAULT_EOS_TOKEN,
-                "bos_token": DEFAULT_BOS_TOKEN,
-                "unk_token": DEFAULT_UNK_TOKEN,
-            }
-        )
+    # Set pad_token to be the same as eos_token
+    if not tokenizer.pad_token:
+        logging.info("Set pad_token to be the same as eos_token")
+        tokenizer.pad_token = tokenizer.eos_token
+        model.config.pad_token_id = tokenizer.eos_token_id
     tokenizer.truncation_side = 'left'
 
     torch.cuda.set_device(rank)
