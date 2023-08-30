@@ -14,10 +14,6 @@ from tqdm import tqdm
 from datasets import load_dataset
 import copy
 IGNORE_INDEX = -100
-DEFAULT_PAD_TOKEN = "[PAD]"
-DEFAULT_EOS_TOKEN = "</s>"
-DEFAULT_BOS_TOKEN = "</s>"
-DEFAULT_UNK_TOKEN = "</s>"
 
 PROMPT_DICT = {
     "prompt_input": (
@@ -262,7 +258,6 @@ if __name__ == "__main__":
     parser.add_argument("--data_path", default="", type=str, help="config path")
     parser.add_argument("--batch_size", type=int, default=0, help="batch size")
     parser.add_argument("--port", type=int, default=0, help="batch size")
-    parser.add_argument("--diverse_beam", type=int, default=1, help="batch size")
     parser.add_argument("--out_path", default="", type=str, help="config path")
     args = parser.parse_args()
 

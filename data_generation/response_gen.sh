@@ -12,5 +12,5 @@ torchrun --nproc_per_node 2 --master_port 7834 response_gen.py \
                         --batch_size 4
 
 python ./split_files.py $OUT_DIR $OUT_DIR
-bash ./scoring_responses.sh $OUT_DIR
-python make_data.py $OUT_DIR
+# bash ./scoring_responses.sh $OUT_DIR
+# python make_data.py $OUT_DIR
