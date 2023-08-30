@@ -213,7 +213,11 @@ def main(rank, args):
         num_return_sequences=4,
     )
     all_outputs = []
-    for step, batch in tqdm(enumerate(dataloader) desc="response generation", total=len(eval_dataset) // batch_size):
+    for step, batch in tqdm(
+        enumerate(dataloader), 
+        desc="response generation", 
+        total=len(eval_dataset) // batch_size
+    ):
         input_ids = batch['input_ids'].to(model.device)
         attention_mask = batch['attention_mask'].to(model.device)
         with torch.no_grad():
