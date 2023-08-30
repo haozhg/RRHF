@@ -216,14 +216,11 @@ def main(rank, args):
         sampler=sampler,
     )
     generation_config = GenerationConfig(
-        temperature=0.8,
-        num_beam_groups=4,
-        diversity_penalty=1.0,
-        num_beams=4,
-        min_length=1,
-        max_new_tokens=128,
+        do_sample=True,
+        temperature=0.2,
+        top_p=0.95,
+        max_length=512,
         num_return_sequences=4,
-
     )
     all_outputs = []
     for step, batch in tqdm(enumerate(dataloader)):

@@ -4,6 +4,7 @@ export CUDA_VISIBLE_DEVICES=0,1
 MODEL_DIR=$1
 OUT_DIR=$2
 mkdir -p $OUT_DIR
+OMP_NUM_THREADS=12
 torchrun --nproc_per_node 2 --master_port 7834 response_gen.py \
                         --base_model $MODEL_DIR \
                         --data_path "lucasmccabe-lmi/CodeAlpaca-20k" \
