@@ -7,7 +7,7 @@ mkdir -p $OUT_DIR
 OMP_NUM_THREADS=12
 torchrun --nproc_per_node 2 --master_port 7834 response_gen.py \
                         --base_model $MODEL_DIR \
-                        --data_path "lucasmccabe-lmi/CodeAlpaca-20k" \
+                        --data_path "openai_humaneval" \
                         --out_path $OUT_DIR \
                         --batch_size 4
 

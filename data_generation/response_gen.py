@@ -92,16 +92,8 @@ class SupervisedDataset(Dataset):
         super(SupervisedDataset, self).__init__()
 
         dataset_for_eval = load_dataset(data_path)['train']
-        logging.warning("Formatting inputs...")
-        prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
-        sources = [
-            prompt_input.format_map(example) if example.get("input", "") != "" else prompt_no_input.format_map(example)
-            for example in dataset_for_eval
-        ]
-        targets = [f"{example['output']}{tokenizer.eos_token}" for example in dataset_for_eval]
-
-        logging.warning("Tokenizing inputs... This may take some time...")
-        
+        sources = [item['prompt'] for item in dataset_for_eval]
+        targets = [item['canonical_solution'] for item in dataset_for_eval]
         data_dict = preprocess(sources, targets, tokenizer)
 
         self.input_ids = data_dict["input_ids"] + data_dict["input_ids"][-50:]
@@ -212,10 +204,12 @@ def main(rank, args):
         sampler=sampler,
     )
     generation_config = GenerationConfig(
-        do_sample=True,
-        temperature=0.2,
-        top_p=0.95,
-        max_length=512,
+        temperature=0.8,
+        num_beam_groups=4,
+        diversity_penalty=1.0,
+        num_beams=4,
+        min_length=1,
+        max_new_tokens=128,
         num_return_sequences=4,
     )
     all_outputs = []
