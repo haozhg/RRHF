@@ -47,7 +47,7 @@ def check_correctness(problem: Dict, completion: str, timeout: float,
             reliability_guard()
 
             # Construct the check program and run it.
-            n_tests = re.findall("assert", problem["test"])
+            n_tests = len(re.findall("assert", problem["test"]))
             # add 
             problem["test"] = add_assertion_error_for_tests(problem["test"])
             check_program = (
