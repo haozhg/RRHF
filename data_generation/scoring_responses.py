@@ -85,7 +85,7 @@ def reward_fn(
         final_results.append(
             {
                 "task_id": ls[0]["task_id"],
-                "query": ls[0]["prompt_w_instruction"],
+                "query": ls[0]["query"],
                 "responses": [i["response"] for i in ls],
                 "scores": [i["score"] for i in ls],
             }
