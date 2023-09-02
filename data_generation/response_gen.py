@@ -15,18 +15,18 @@ from datasets import load_dataset
 import copy
 IGNORE_INDEX = -100
 
-PROMPT_DICT = {
-    "prompt_input": (
-        "Below is an instruction that describes a task, paired with an input that provides further context. "
-        "Write a response that appropriately completes the request.\n\n"
-        "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:"
-    ),
-    "prompt_no_input": (
-        "Below is an instruction that describes a task. "
-        "Write a response that appropriately completes the request.\n\n"
-        "### Instruction:\n{instruction}\n\n### Response:"
-    ),
-}
+# https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/humaneval_gen.py#L22C1-L32C1
+def generate_prompt(input):
+    INSTRUCTION = f"""Below is an instruction that describes a task. Write a response that appropriately completes the request.
+
+
+### Instruction:
+Create a Python script for this problem:
+{input}
+
+### Response:"""
+    return INSTRUCTION
+
 
 def smart_tokenizer_and_embedding_resize(
     special_tokens_dict: Dict,
@@ -92,6 +92,15 @@ class SupervisedDataset(Dataset):
         super(SupervisedDataset, self).__init__()
 
         dataset_for_eval = load_dataset(data_path)['train']
+        logging.warning("Formatting inputs...")
+        sources = [
+            generate_prompt(example['prompt'])
+            for example in dataset_for_eval
+        ]
+        targets = [f"{example['canonical_solution']}{tokenizer.eos_token}" for example in dataset_for_eval]
+
+        logging.warning("Tokenizing inputs... This may take some time...")
+        
         sources = [item['prompt'] for item in dataset_for_eval]
         targets = [item['canonical_solution'] for item in dataset_for_eval]
         data_dict = preprocess(sources, targets, tokenizer)

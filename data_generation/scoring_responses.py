@@ -103,4 +103,5 @@ finals = reward_fn(candidates)
 
 
 with open(sys.argv[2], 'w') as f:
-    json.dump(finals, f, indent=2)
+    for res in finals:
+        f.write(json.dumps(res).strip() + '\n')
