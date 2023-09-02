@@ -1,14 +1,13 @@
+set -e
+set -x
+
 export MODEL_PATH=$1
 export SAVE_PATH=$2
 export DATA_PATH=$3
-export MASTER_ADDR="localhost"
-export MASTER_PORT="22"
 
 time python3 -m torch.distributed.launch \
-    --master_addr ${MASTER_ADDR} \
-    --master_port ${MASTER_PORT} \
     --nproc_per_node=2 \
-    --use_env train.py \
+    train.py \
     --model_name_or_path $MODEL_PATH \
     --data_path $DATA_PATH \
     --bf16 True \
