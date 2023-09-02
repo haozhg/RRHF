@@ -7,19 +7,15 @@ from torch import nn
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from tqdm import tqdm
 from human_eval.data import read_problems, write_jsonl, stream_jsonl
-from human_eval.execution import check_correctness
+from execution_rrhf import check_correctness
 from typing import List, Dict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Union, Iterable, Dict
 from collections import defaultdict, Counter
+from typing import List
+import re
 
 problems = read_problems()
-
-from typing import List
-
-
-def get_score(problem: Dict, ):
-    pass
 
 
 def reward_fn(
@@ -79,7 +75,7 @@ def reward_fn(
                 "task_id": result["task_id"],
                 "query": sample["prompt_w_instruction"],
                 "response": sample["completion"],
-                "score": get_score(problems[result["task_id"]], result["result"])   
+                "score": result["n_passed"],   
             }
         )
     
