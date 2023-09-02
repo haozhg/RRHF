@@ -23,7 +23,7 @@ def add_assertion_error_for_tests(test: str) -> str:
 
 
 def check_correctness(problem: Dict, completion: str, timeout: float,
-                      completion_id: Optional[int] = None) -> Dict:
+                      completion_id: int) -> Dict:
     """
     Evaluates the functional correctness of a completion by running the test
     suite provided in the problem. 

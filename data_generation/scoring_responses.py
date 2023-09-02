@@ -57,7 +57,7 @@ def reward_fn(
     results_by_task_id = defaultdict(list)
     # Check the generated samples against test suites.
     with ThreadPoolExecutor(max_workers=n_workers) as executor:
-        results = list(executor.map(check_correctness, all_args))
+        results = list(executor.map(check_correctness, *zip(*all_args)))
     
     assert len(samples) == len(results)
     
