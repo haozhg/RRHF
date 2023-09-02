@@ -5,8 +5,9 @@ export MODEL_PATH=$1
 export SAVE_PATH=$2
 export DATA_PATH=$3
 
-time python3 -m torch.distributed.launch \
+time python -m torch.distributed.launch \
     --nproc_per_node=2 \
+    --use_env \
     train.py \
     --model_name_or_path $MODEL_PATH \
     --data_path $DATA_PATH \
