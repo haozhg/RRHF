@@ -1,5 +1,6 @@
 ## model is modified based on Alpaca train.py
 import os
+import logging
 import argparse
 import torch
 import transformers
@@ -13,10 +14,20 @@ from tqdm import tqdm
 from datasets import load_dataset
 import copy
 IGNORE_INDEX = -100
-DEFAULT_PAD_TOKEN = "[PAD]"
-DEFAULT_EOS_TOKEN = "</s>"
-DEFAULT_BOS_TOKEN = "</s>"
-DEFAULT_UNK_TOKEN = "</s>"
+
+# https://github.com/nlpxucan/WizardLM/blob/main/WizardCoder/src/humaneval_gen.py#L22C1-L32C1
+def generate_prompt(input):
+    INSTRUCTION = f"""Below is an instruction that describes a task. Write a response that appropriately completes the request.
+
+
+### Instruction:
+Create a Python script for this problem:
+{input}
+
+### Response:"""
+    return INSTRUCTION
+
+
 def smart_tokenizer_and_embedding_resize(
     special_tokens_dict: Dict,
     tokenizer: transformers.PreTrainedTokenizer,
@@ -81,8 +92,17 @@ class SupervisedDataset(Dataset):
         super(SupervisedDataset, self).__init__()
 
         dataset_for_eval = load_dataset(data_path)['train']
+        logging.warning("Formatting inputs...")
+        sources = [
+            generate_prompt(example['prompt'])
+            for example in dataset_for_eval
+        ]
+        targets = [f"{example['canonical_solution']}{tokenizer.eos_token}" for example in dataset_for_eval]
+
+        logging.warning("Tokenizing inputs... This may take some time...")
+        
         sources = [item['prompt'] for item in dataset_for_eval]
-        targets = [item['chosen'] for item in dataset_for_eval]
+        targets = [item['canonical_solution'] for item in dataset_for_eval]
         data_dict = preprocess(sources, targets, tokenizer)
 
         self.input_ids = data_dict["input_ids"] + data_dict["input_ids"][-50:]
@@ -170,20 +190,11 @@ def main(rank, args):
 
     tokenizer = LlamaTokenizer.from_pretrained(base_model)
 
-    if tokenizer.pad_token is None:
-        smart_tokenizer_and_embedding_resize(
-            special_tokens_dict=dict(pad_token=DEFAULT_PAD_TOKEN),
-            tokenizer=tokenizer,
-            model=model,
-        )
-    if "llama" in base_model:
-        tokenizer.add_special_tokens(
-            {
-                "eos_token": DEFAULT_EOS_TOKEN,
-                "bos_token": DEFAULT_BOS_TOKEN,
-                "unk_token": DEFAULT_UNK_TOKEN,
-            }
-        )
+    # Set pad_token to be the same as eos_token
+    if not tokenizer.pad_token:
+        logging.info("Set pad_token to be the same as eos_token")
+        tokenizer.pad_token = tokenizer.eos_token
+        model.config.pad_token_id = tokenizer.eos_token_id
     tokenizer.truncation_side = 'left'
 
     torch.cuda.set_device(rank)
@@ -209,10 +220,13 @@ def main(rank, args):
         min_length=1,
         max_new_tokens=128,
         num_return_sequences=4,
-
     )
     all_outputs = []
-    for step, batch in tqdm(enumerate(dataloader)):
+    for step, batch in tqdm(
+        enumerate(dataloader), 
+        desc="response generation", 
+        total=len(eval_dataset) // batch_size
+    ):
         input_ids = batch['input_ids'].to(model.device)
         attention_mask = batch['attention_mask'].to(model.device)
         with torch.no_grad():
@@ -251,7 +265,6 @@ if __name__ == "__main__":
     parser.add_argument("--data_path", default="", type=str, help="config path")
     parser.add_argument("--batch_size", type=int, default=0, help="batch size")
     parser.add_argument("--port", type=int, default=0, help="batch size")
-    parser.add_argument("--diverse_beam", type=int, default=1, help="batch size")
     parser.add_argument("--out_path", default="", type=str, help="config path")
     args = parser.parse_args()
 

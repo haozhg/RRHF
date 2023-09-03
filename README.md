@@ -1,6 +1,9 @@
 
 # Wombat 🐻‍❄️: from RLHF to RRHF, Aligning Human Preferences in a 'Right' Way
 
+3. RRHF:
+In the third step, you'll further fine-tune the model using the algorithm mentioned in the paper titled Rank Responses to Align Language Models with Human Feedback. The algorithm should be modified to have a number of tests passing as a preference method.
+
 [Arxiv](https://arxiv.org/pdf/2304.05302.pdf)
 
 [![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](https://github.com/tatsu-lab/stanford_alpaca/blob/main/LICENSE)
